@@ -1,19 +1,3 @@
-import sys
-from doublyLinkedList_Tree import DoublyLinkedList
-
-
-# árvore completa é quando as folhas estão no mesmo nível
-# - o maior valor fica na direta, o menor fica na esquerda
-# - geralmente árvore binária de busca não aceita valores repetidos
-# - a cada passo na árvore, eu elimino 50%
-# - para adicionar, a árvore tem um custo maior que a lista, mas para buscar ela tem um custo bem menor
-# - filhos, pais, raíz, nó e folha
-# - folha não tem filho, raíz tem filho
-# - o maior valor é sempre uma folha à direita ou uma raíz que não tem uma folha à direita mas pode ter à esquerda
-# - o menor valor é sempre uma folha à esquerda ou uma raíz que não tem uma folha à esquerda mas pode ter à direta
-# - Uma árvore tem altura e nível
-
-
 class _Node:  # Cria o nó
     def __init__(self, data) -> None:
         self.data = data
@@ -28,25 +12,22 @@ class _Node:  # Cria o nó
         # se left e right forem nome ele retorna True. Se um deles não for None ele retorna False
 
 
-class BinaryTree:  # cria a classe BinaryTree
+class AVLTree:  # cria a classe BinaryTree
     def __init__(self) -> None:
         self.root = None
         self.total = 0
 
     # ================================== perc ==============================
 
-    def __get_perc(self, perc, value, search_mode=False, previous=None) -> tuple | None:
+    def __get_perc(self, perc, value, previous=None) -> tuple:
         if not perc:
-            if search_mode:
-                return perc, None
-            else:
-                raise Exception("perc is not in tree")
+            raise Exception("perc is not in tree")
         elif perc.data == value:
             return perc, previous  # retona o perc e o anterior se o valor dele for igual ao que eu estou procurando
         elif value < perc.data:
-            return self.__get_perc(perc.left, value,  search_mode, perc)
+            return self.__get_perc(perc.left, value, perc)
         else:
-            return self.__get_perc(perc.right, value, search_mode, perc)
+            return self.__get_perc(perc.right, value, perc)
 
     def get(self, value, search_mode) -> _Node:
         perc, previous = self.__get_perc(self.root, value, search_mode)  # chama a função privada
@@ -92,14 +73,6 @@ class BinaryTree:  # cria a classe BinaryTree
             perc = self.root.left
         return self.__get_min_max(perc.left, 'right')
 
-    def search(self, value, type=None, search_mode=False):
-        if type is None:
-            return self.get(value, search_mode)
-        elif type == 'successor':
-            return self.__get_successor(self.get(value, search_mode)).data
-        elif type == 'predeccessor':
-            return self.__get_predeccessor(self.get(value, search_mode)).data
-
     # chama a função privada passando o perc.left e dizendo que ele quer o máximo (por conta do atibuto "right")
 
     def ordem(self, raiz, order='in') -> None:  # imprime o elemento na ordem desejada (pre, in ou post)
@@ -120,22 +93,6 @@ class BinaryTree:  # cria a classe BinaryTree
 
     def __len__(self):
         return self.total
-
-    def print(self):
-        self.printHelper(self.root, '', True)
-
-    def printHelper(self, currPtr, indent, last):
-        if currPtr is not None:
-            sys.stdout.write(indent)
-            if last:
-                sys.stdout.write("R----")
-                indent += "     "
-            else:
-                sys.stdout.write("L----")
-                indent += "|    "
-            print(currPtr.data)
-            self.printHelper(currPtr.left, indent, False)
-            self.printHelper(currPtr.right, indent, True)
 
     def __remove_leaf(self, node, previous_node) -> None:  # caso o nó seja uma folha
         if node.data < previous_node.data:
@@ -210,25 +167,6 @@ class BinaryTree:  # cria a classe BinaryTree
         self.__remove(node, previous_node)
         self.total -= 1
 
-    def __get_list(self, root, lista) -> DoublyLinkedList:
-        if not root:
-            return
-        self.__get_list(root.left, lista)
-        lista.append_item(root.data)
-        self.__get_list(root.right, lista)
-        return lista
-
-    def get_list(self) -> DoublyLinkedList:
-        return self.__get_list(self.root, DoublyLinkedList())
-
-    def create_tree_from_list(self, lista: list | DoublyLinkedList):
-        self.root = None
-        self.total = 0
-        for element in lista:
-            self.add(element)
-        self.balance()
-        # print('Congratulations! The tree was successfuly created.')
-
     def __get_height(self, subtree):
         if not subtree:
             return -1
@@ -282,18 +220,13 @@ class BinaryTree:  # cria a classe BinaryTree
         subtree.left = substitute.right  # se o substituto tem esquerda ele aponta, e se for none ele também será
         substitute.right = subtree
 
-    def __balance(self, subtree, verify_balanced, unbalanced_factors):
+    def __balance(self, subtree):
         if not subtree:
             return
-        self.__balance(subtree.left, verify_balanced, unbalanced_factors)
-        self.__balance(subtree.right, verify_balanced, unbalanced_factors)
+        self.__balance(subtree.left)
+        self.__balance(subtree.right)
         balance_factor = self.__get_balance_factor(subtree)
-        if verify_balanced and balance_factor not in [-1, 0, 1]:
-            unbalanced_factors.append_item(balance_factor)
-        if verify_balanced and len(unbalanced_factors) == 0:
-            return True  # quer dizer que a árvore já está balanceada
 
-        # só vai cair aqui se eu não quiser verficar (só cai aqui quando houver desbalanceamento)
         while balance_factor not in [-1, 0, 1]:
             if balance_factor < -1:
                 child = subtree.right
@@ -314,17 +247,5 @@ class BinaryTree:  # cria a classe BinaryTree
                     self.__right_rotation(subtree)  # Rotação horária
             balance_factor = self.__get_balance_factor(subtree)
 
-    def balance(self, verify_balanced=False):
-        unbalanced_factors = None
-        if verify_balanced:
-            unbalanced_factors = DoublyLinkedList()
-        return self.__balance(self.root, verify_balanced, unbalanced_factors)
-
-#
-# tree = BinaryTree()
-# lista = DoublyLinkedList()
-# for i in range(15, 0, -1):
-#     lista.append_item(i)
-# tree.create_tree_from_list(lista)
-#
-# tree.balance()
+    def balance(self):
+        self.__balance(self.root)

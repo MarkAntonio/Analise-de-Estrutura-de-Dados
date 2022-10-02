@@ -29,8 +29,8 @@ class AVLTree:  # cria a classe BinaryTree
         else:
             return self.__get_perc(perc.right, value, perc)
 
-    def get(self, value, search_mode) -> _Node:
-        perc, previous = self.__get_perc(self.root, value, search_mode)  # chama a função privada
+    def get(self, value) -> _Node:
+        perc, previous = self.__get_perc(self.root, value)  # chama a função privada
         return perc  # retorona somente o perc (Escolha minha)
 
     # ============================ mínimo e máximo =================================================
@@ -61,6 +61,7 @@ class AVLTree:  # cria a classe BinaryTree
         node = _Node(data)  # criar o objeto node
         self.root = self.__add(self.root, node)  # chama a afunção privada
         self.total += 1  # no final da função privada ele soma + 1 ao total de elementos
+        self.__balance(self.root)  # balanceia a árvore
 
     def __get_successor(self, perc=None) -> _Node:  # função privada para obter o sucessor
         if not perc:
@@ -166,6 +167,7 @@ class AVLTree:  # cria a classe BinaryTree
             return
         self.__remove(node, previous_node)
         self.total -= 1
+        self.__balance(self.root) # balanceia a árvore
 
     def __get_height(self, subtree):
         if not subtree:
@@ -247,5 +249,4 @@ class AVLTree:  # cria a classe BinaryTree
                     self.__right_rotation(subtree)  # Rotação horária
             balance_factor = self.__get_balance_factor(subtree)
 
-    def balance(self):
-        self.__balance(self.root)
+

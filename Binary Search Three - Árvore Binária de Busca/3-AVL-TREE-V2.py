@@ -3,10 +3,13 @@ class TreeNode(object):
         self.data = data
         self.right = None
         self.left = None
-        self.height = 1
+        self.height = 0
 
     def __str__(self) -> str:
         return str(self.data)
+
+    def is_leaf(self):
+        return self.right is None and self.left is None
 
 class AVLTree(object):
     def __init__(self) -> None:
@@ -41,16 +44,89 @@ class AVLTree(object):
         self.total += 1
 
     def __get_min_max(self, perc, perc_sufixo) -> TreeNode:
-        if hasattr(perc, perc_sufixo):  # verifida se o objeto (perc) tem o atributo (perc_sufixo_
-            while getattr(perc, perc_sufixo):  # se entrar, ele cria um loop enquando o objeto tiver esse atributo
-                perc = getattr(perc, perc_sufixo)  # aqui o objeto recebe o próprio objeto naquele atributo
-            return perc  # quando o laço acaba ele retorna perc
+        if hasattr(perc, perc_sufixo):
+            while getattr(perc, perc_sufixo):
+                perc = getattr(perc, perc_sufixo)
+            return perc
 
     def max_value(self) -> TreeNode:
-        return self.__get_min_max(self.root, "right")  # chama a função privada passando o atributo "right"
+        return self.__get_min_max(self.root, "right")
 
     def min_value(self) -> TreeNode:
-        return self.__get_min_max(self.root, "left")  # chama a função privada passando o atributo "left"
+        return self.__get_min_max(self.root, "left")
+
+    def __get_successor(self, perc) -> TreeNode:
+        return self.__get_min_max(perc.right, 'left')
+
+    def __get_predeccessor(self, perc) -> TreeNode:
+        return self.__get_min_max(perc.left, 'right')
+
+    def __get_perc(self, perc, value, previous=None) -> tuple:
+        if not perc:
+            raise Exception("perc is not in tree")
+        elif perc.data == value:
+            return perc, previous  # retona o perc e o anterior se o valor dele for igual ao que eu estou procurando
+        elif value < perc.data:
+            return self.__get_perc(perc.left, value, perc)
+        else:
+            return self.__get_perc(perc.right, value, perc)
+
+    def __delete_both(self, subtree):
+        substitute = self.__get_successor(subtree)
+        substitute, previous_substitute = self.__get_perc(subtree, substitute.data)
+        substitute.left = subtree.left
+        if subtree.right is not substitute:
+            if substitute.right:
+                previous_substitute.left = substitute.right
+            else:
+                previous_substitute.left = None
+            substitute.right = subtree.right
+        subtree.right = None
+        subtree.left = None
+        return substitute
+
+    def __delete(self, subtree, value):
+        if not subtree:
+            raise Exception('Value is not in tree.')
+            # return subtree
+        if value < subtree.data:
+            subtree.left = self.__delete(subtree.left, value)
+        elif value > subtree.data:
+            subtree.right = self.__delete(subtree.right, value)
+        else:
+            # é uma folha - não tem filhos
+            if subtree.is_leaf():
+                return None
+            # Tem filho na esquerda
+            if not subtree.right:
+                subtitute = subtree.left
+                root = None
+                return subtitute
+            # Tem filho na direita
+            elif not subtree.left:
+                sustitute = subtree.right
+                root = None
+                return sustitute
+            #Tem os dois filhos
+            else:
+                subtree = self.__delete_both(subtree)
+
+
+        if subtree is None:  # esse aqui é pra recusividade
+            return subtree
+
+        subtree.height = 1 + max(self.get_height(subtree.left), self.get_height(subtree.right))
+
+        balance_factor = self.__get_balance(subtree)
+        if balance_factor not in [-1, 0, 1]:
+            return self.__balance(subtree, balance_factor)
+
+        return subtree
+
+    def delete(self, value):
+        # fazer uma correção caso ele seja a raiz, para o balancemento não dar errado
+        self.root = self.__delete(self.root, value)
+        self.total -= 1
 
     def preorder(self) -> None:
         self.__order(self.root, 'pre')
@@ -75,7 +151,7 @@ class AVLTree(object):
 
     def get_height(self, root) -> int:
         if not root:
-            return 0
+            return -1
         return root.height
 
     def __get_balance(self, subtree) -> int:
@@ -127,6 +203,9 @@ class AVLTree(object):
 
 
 avl_tree = AVLTree()
-for number in range(0, 20, 2):
-    avl_tree.insert(number)
+for i in range(0, 15, 2):
+    avl_tree.insert(i)
+print(avl_tree)
+
+avl_tree.delete(10)
 print(avl_tree)
